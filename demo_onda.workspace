@@ -2,8 +2,8 @@
 <CodeBlocks_workspace_file>
   <Workspace title="demo_onda">
     <Project filename="demo_onda.cbp" active="1">
-      <Depends filename="/mnt/sda5/pardo/sources/of_preRelease_v0062_linux_FAT/libs/openFrameworksCompiled/project/linux/libopenFrameworks.cbp"/>
+        <Depends filename="../../../libs/openFrameworksCompiled/project/linux/libopenFrameworks.cbp"/>
     </Project>
-    <Project filename="/mnt/sda5/pardo/sources/of_preRelease_v0062_linux_FAT/libs/openFrameworksCompiled/project/linux/libopenFrameworks.cbp"/>
+    <Project filename="../../../libs/openFrameworksCompiled/project/linux/libopenFrameworks.cbp"/>
   </Workspace>
 </CodeBlocks_workspace_file>
