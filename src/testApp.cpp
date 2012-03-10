@@ -1,22 +1,18 @@
 #include "testApp.h"
-
+#include "ofxXmlSettings.h"
 
 
 //--------------------------------------------------------------
 void testApp::setup(){
-//    string audios[] = { "/mnt/sda5/pardo/sonidos_anahi/2004_1-2.aif.ogg", 
-//                        "/mnt/sda5/pardo/sonidos_anahi/2007final_1-2.aif.ogg", 
-//                        "/mnt/sda5/pardo/sonidos_anahi/2009-final.aif.ogg"
-//                    };
     
     ofBackground(0,0,10);
 
     vector<string> audios;
-    audios.push_back("/home/pardo/musica/Sara Vaughan - Peter Gunn.ogg");
-    audios.push_back("/home/pardo/musica/Fever (Peggy Lee).ogg");
-    audios.push_back("/home/pardo/musica/Amadou & Mariam - Dimanche à Bamako - 10 - La Paix.ogg");
 
-    int cnt = audios.size();
+    ofxXmlSettings settings;
+    settings.loadFile("configuracion.xml");
+
+    int cnt = settings.getNumTags("player");
 
     int w = ofGetWidth() * .9;
     int h = ofGetHeight() * .9;
@@ -26,23 +22,47 @@ void testApp::setup(){
     int topy = (ofGetScreenHeight() - dy*cnt)/2;
 
     printf("getwidth: %i , w: %i , topx: %i\n",ofGetScreenWidth(), w, topx);
-    
-    ondaStyle *estilo = new ondaStyle();
 
-    estilo->lineWidth = 3;
-    estilo->color.r = 127;
-    estilo->color.g = 127;
+    //valores predeterminados
+    int lw= 10, lr = 250, lg = 250, lb = 29;
+    float vol = 0.2;
 
-    for (int idx=0; idx < cnt ; idx++) {
-        onda *player = new onda(topx, topy + dy*idx, w, dy*.9, 128);
-        player->loadSound(audios[idx]);
-        reproductores.push_back(player);
-        player->play();
-        player->setLoop(true);
-        player->setMultiPlay(false);
-        player->style = estilo;
-        player->_debug = true;
+    settings.pushTag("defaults");
+    lw = settings.getValue("linewidth", 10);
+    lr = settings.getValue("line_red",250);
+    lg = settings.getValue("line_green",250);
+    lb = settings.getValue("line_blue",29);
+    vol =  settings.getValue("volume", 0.2);
+    settings.popTag();
+
+    for(int idx=0; idx < cnt ; idx++) {
+        settings.pushTag("player", idx);
+        string fn = settings.getValue("file", "");
+        if (fn.size()) {
+            audios.push_back(fn);
+            printf("file: %s\n", fn.c_str());
+
+            ondaStyle *estilo = new ondaStyle();
+
+            estilo->lineWidth = settings.getValue("linewidth",lw);
+            estilo->color.r = settings.getValue("line_red",lr);
+            estilo->color.g = settings.getValue("line_green",lg);
+            estilo->color.b = settings.getValue("line_blue",lb);
+
+            onda *player = new onda(topx, topy + dy*idx, w, dy*.9, 128);
+
+            player->loadSound(fn);
+            reproductores.push_back(player);
+            player->setVolume(settings.getValue("volume", vol));
+            player->play();
+            player->setLoop(true);
+            player->setMultiPlay(false);
+            player->style = estilo;
+            player->_debug = false;
+        }
+        settings.popTag();
     }
+
 }
 
 

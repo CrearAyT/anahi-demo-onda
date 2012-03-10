@@ -1,0 +1,23 @@
+<defaults>
+    <linewidth>12</linewidth>
+    <line_red>250</line_red>
+    <line_green>00</line_green>
+    <line_blue>00</line_blue>
+    <volume>0.2</volume>
+</defaults>
+
+<player>
+    <file>/home/pardo/musica/Sara Vaughan - Peter Gunn.ogg</file>
+    <linewidth>12</linewidth>
+    <line_red>250</line_red>
+    <line_green>50</line_green>
+    <line_blue>90</line_blue>
+</player>
+
+<player>
+    <file>/home/pardo/musica/Amadou &amp; Mariam - Dimanche à Bamako - 10 - La Paix.ogg</file>
+</player>
+
+<player>
+    <file>/home/pardo/musica/Fever (Peggy Lee).ogg</file>
+</player>
