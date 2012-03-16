@@ -3,8 +3,17 @@
     <line_red>250</line_red>
     <line_green>00</line_green>
     <line_blue>00</line_blue>
-    <volume>0.2</volume>
+    <volume>0.20</volume>
 </defaults>
+
+<rayo>
+    <duracion>2</duracion>
+    <largo_minimo>100</largo_minimo>
+    <linewidth>92</linewidth>
+    <rayo_red>50</rayo_red>
+    <rayo_green>250</rayo_green>
+    <rayo_blue>89</rayo_blue>
+</rayo>
 
 <player>
     <file>/home/pardo/musica/Sara Vaughan - Peter Gunn.ogg</file>
