@@ -3,7 +3,10 @@
 
 
 #include "ofMain.h"
+#include "ofVec2f.h"
 #include "onda.h"
+
+enum State { CLICK, RELEASE, RAY };
 
 class testApp : public ofBaseApp{
 
@@ -21,7 +24,15 @@ class testApp : public ofBaseApp{
 		void mouseReleased(int x, int y, int button);
 		void windowResized(int w, int h);
 
+        State state;
+        ofVec2f start, end;
+        float tstart;
+        float raylen;
+        float raymin;
+        ofStyle estilo_rayo;
+
         vector<onda *> reproductores;
+        vector<ofSoundPlayer *> reproductores_rayo;
 };
 
 #endif
