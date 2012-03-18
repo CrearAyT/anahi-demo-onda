@@ -76,7 +76,7 @@ void testApp::setup(){
             rayplay->loadSound(fn);
             rayplay->setLoop(false);
             rayplay->setMultiPlay(false);
-            rayplay->setVolume(vol);
+            rayplay->setVolume(1.0);
             reproductores_rayo.push_back(rayplay);
         }
         settings.popTag();
@@ -90,6 +90,8 @@ void testApp::update(){
     for (vector<onda *>::iterator it=reproductores.begin() ; it != reproductores.end() ; it++) {
         (*it)->update();
     }
+
+    executePlaylist();
 }
 
 //--------------------------------------------------------------
@@ -155,6 +157,7 @@ void testApp::mouseReleased(int x, int y, int button){
         if ( end.x == start.x ){
             end.y = 0;
             start.y = h;
+            buildPlaylist();
             return;
         }
 
@@ -175,6 +178,7 @@ void testApp::mouseReleased(int x, int y, int button){
         end.x = x;
         end.y = m*x + b;
 
+        buildPlaylist();
     }
 }
 
@@ -183,3 +187,94 @@ void testApp::windowResized(int w, int h){
 
 }
 
+//--------------------------------------------------------------
+void testApp::buildPlaylist(){
+    float m = (end.y - start.y) / (end.x - start.x);
+    float x0 = start.x;
+    float y0 = start.y;
+    float b = y0 - m*x0;
+
+    int cnt = reproductores_rayo.size();
+
+    int w = ofGetWidth() * .9;
+    int h = ofGetHeight() * .9;
+    int dy = h / cnt;
+
+    int topx = (ofGetScreenWidth() - w)/2;
+    int topy = (ofGetScreenHeight() - dy*cnt)/2;
+
+    int dir = (end.y > start.y) ? 1 : 0;
+
+    for (int i=0; i < cnt ; i++){
+        int idx = dir ? i : (cnt-1) - i ;
+
+        // donde el rayo corta a la linea media de cada reproductor.
+        int y = topy + idx*dy + 0.5*0.9*dy;
+        float x = (y-b) / m;
+
+        // el rayo no corta a esta linea dentro de la pantalla.
+        if ( (x>w) || (x<topx) ){
+            continue;
+        }
+
+        // Si cruza de en la mitad izquierda toma hasta 30 segundos anteriores.
+        unsigned int dt = 30*1000*(x -w/2)/w; // en ms.
+
+        // XXX: en 0062 solo hay un getPosition en samples y no una forma
+        // facil de obtener la tasa de muestreo del sonido.
+        unsigned int pos;
+        FMOD_Channel_GetPosition(reproductores[idx]->channel, &pos, FMOD_TIMEUNIT_MS);
+
+        unsigned int len;
+        FMOD_Sound_GetLength(reproductores[idx]->sound, &len, FMOD_TIMEUNIT_MS);
+
+
+        PlayItem *item = new PlayItem;
+
+        // Un segundo y medio de duracion por cada segmento.
+        if ( (pos + dt) < (len - 1.5*1000) ){
+            item->start = (pos + dt) / ((float) len);
+            item->end = (pos + dt + 1.5*1000) / ((float) len);
+            if ( item->start < 0 ){
+                item->start = 0;
+                item->end = (pos + 1.5*1000) / ((float) len);
+            }
+
+        }else{
+            item->start = (len - 1.5*1000) / ((float) len);
+            item->end = 0.999;
+        }
+
+        item->player = reproductores_rayo[idx];
+        printf("BUILD idx=%i pos=%i dt=%i len=%i\n", idx, pos,dt,len);
+        printf("BUILD idx=%i start=%.2f end=%.2f\n", idx, item->start, item->end);
+        playlist.push(item);
+    }
+
+}
+
+//--------------------------------------------------------------
+void testApp::executePlaylist(){
+    if( playlist.empty() ){
+        return;
+    }
+
+    PlayItem *item = playlist.front();
+
+    if ( true == item->player->getIsPlaying() ){
+        if( item->player->getPosition() < item->end ){
+            return;
+        }
+
+        item->player->stop();
+        playlist.pop();
+
+        delete item;
+        printf("item delete. size=%i\n", playlist.size());
+    }else{
+        // XXX: setPosition() solo toma efecto si se esta reproduciendo!
+        item->player->play();
+        item->player->setPosition(item->start);
+    }
+
+}

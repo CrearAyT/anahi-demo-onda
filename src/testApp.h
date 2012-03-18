@@ -6,7 +6,15 @@
 #include "ofVec2f.h"
 #include "onda.h"
 
+#include <queue>
+
 enum State { CLICK, RELEASE, RAY };
+
+struct PlayItem {
+    ofSoundPlayer *player;
+    float start;
+    float end;
+};
 
 class testApp : public ofBaseApp{
 
@@ -33,6 +41,13 @@ class testApp : public ofBaseApp{
 
         vector<onda *> reproductores;
         vector<ofSoundPlayer *> reproductores_rayo;
+
+        queue<PlayItem *> playlist;
+
+    private:
+
+        void buildPlaylist();
+        void executePlaylist();
 };
 
 #endif
