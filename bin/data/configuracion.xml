@@ -1,32 +1,48 @@
 <defaults>
-    <linewidth>12</linewidth>
-    <line_red>250</line_red>
-    <line_green>00</line_green>
-    <line_blue>00</line_blue>
-    <volume>0.20</volume>
+    <port>/dev/ttyUSB0</port>
+    <luz>
+        <umbral>100</umbral>
+        <invertir>1</invertir>
+        <duracion>600</duracion>
+        <duracion_fin>100</duracion_fin>
+        <alfa>0.8</alfa>
+    </luz>
+
+    <presion>
+        <invertir>0</invertir>
+        <duracion>300</duracion>
+        <duracion_fin>100</duracion_fin>
+        <alfa>0.975</alfa>
+    </presion>
+
+    <volumen_normal>0.20</volumen_normal>
+    <volumen_activo>1.0</volumen_activo>
 </defaults>
 
-<rayo>
-    <duracion>2</duracion>
-    <largo_minimo>100</largo_minimo>
-    <linewidth>92</linewidth>
-    <rayo_red>50</rayo_red>
-    <rayo_green>250</rayo_green>
-    <rayo_blue>89</rayo_blue>
-</rayo>
+<luz> </luz>
+<luz> </luz>
+<luz> </luz>
+<luz> </luz>
+<luz> </luz>
+<luz> </luz>
+
+<presion> </presion>
+<presion> </presion>
+<presion> </presion>
+<presion> </presion>
+<presion> </presion>
+<presion> </presion>
+
 
 <player>
-    <file>/home/pardo/musica/Sara Vaughan - Peter Gunn.ogg</file>
-    <linewidth>12</linewidth>
-    <line_red>250</line_red>
-    <line_green>50</line_green>
-    <line_blue>90</line_blue>
+    <file>/media/datos/musica/musica_home/Sara Vaughan - Peter Gunn.ogg</file>
 </player>
 
 <player>
-    <file>/home/pardo/musica/Amadou &amp; Mariam - Dimanche à Bamako - 10 - La Paix.ogg</file>
+    <presion>1</presion>
+    <file>/media/datos/musica/musica_home/Amadou &amp; Mariam - Dimanche à Bamako - 10 - La Paix.ogg</file>
 </player>
 
 <player>
-    <file>/home/pardo/musica/Fever (Peggy Lee).ogg</file>
+    <file>/media/datos/musica/musica_home/Fever (Peggy Lee).ogg</file>
 </player>

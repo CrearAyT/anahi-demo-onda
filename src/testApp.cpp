@@ -7,77 +7,144 @@ void testApp::setup(){
     
     ofBackground(0,0,10);
     ofEnableAlphaBlending();
-
-    vector<string> audios;
+    ofEnableSmoothing();
 
     ofxXmlSettings settings;
     settings.loadFile("configuracion.xml");
 
-    int cnt = settings.getNumTags("player");
-
-    int w = ofGetWidth() * .9;
-    int h = ofGetHeight() * .9;
-    int dy = h / cnt;
-
-    int topx = (ofGetScreenWidth() - w)/2;
-    int topy = (ofGetScreenHeight() - dy*cnt)/2;
-
-    printf("getwidth: %i , w: %i , topx: %i\n",ofGetScreenWidth(), w, topx);
+    ofAddListener(arduino.EInitialized, this, &testApp::setupArduino);
+    bSetupArduino   = false;
+    lt = ofGetElapsedTimeMillis();
 
     //valores predeterminados
-    int lw= 10, lr = 250, lg = 250, lb = 29;
-    float vol = 0.2;
+    string port = "/dev/ttyUSB0";
+    float max_quiet = 0.2;
+    float max_trig = 1.0;
+    float alfa_luz = 0.8;
+    float alfa_pres = 0.95;
+    int inv_luz = 0;
+    int umb_luz = 600;
+    int sust_luz = 600;
+    int sust_pres = 600;
+    int rel_luz = 100;
+    int rel_pres = 100;
 
-    state = RELEASE;
 
     settings.pushTag("defaults");
-    lw = settings.getValue("linewidth", 10);
-    lr = settings.getValue("line_red",250);
-    lg = settings.getValue("line_green",250);
-    lb = settings.getValue("line_blue",29);
-    vol =  settings.getValue("volume", 0.2);
+        port = settings.getValue("port", "/dev/ttyUSB0");
+        max_trig =  settings.getValue("volumen_activo", 1.0);
+        max_quiet =  settings.getValue("volumen_normal", 0.2);
+        settings.pushTag("luz");
+            inv_luz =  settings.getValue("invertir", 0);
+            umb_luz =  settings.getValue("umbral", 100);
+            sust_luz =  settings.getValue("duracion", 600);
+            umb_luz =  settings.getValue("umbral", 100);
+            alfa_luz =  settings.getValue("alfa", 0.8);
+        settings.popTag();
+        settings.pushTag("presion");
+            //inv_luz =  settings.getValue("invertir", 0);
+            sust_pres =  settings.getValue("duracion", 600);
+            alfa_pres =  settings.getValue("alfa", 0.95);
+            rel_pres =  settings.getValue("duracion_fin", 100);
+        settings.popTag();
     settings.popTag();
 
-    settings.pushTag("rayo");
-    estilo_rayo.lineWidth= settings.getValue("linewidth", 10);
-    estilo_rayo.color.r = settings.getValue("rayo_red",50);
-    estilo_rayo.color.g = settings.getValue("rayo_green",250);
-    estilo_rayo.color.b = settings.getValue("rayo_blue",89);
-    raylen = settings.getValue("duracion", 2.0);
-    raymin = settings.getValue("largo_minimo", 100);
-    settings.popTag();
+    arduino.connect(port, 57600);
 
+    int cnt;
+
+    cnt = settings.getNumTags("luz");
+    ofLog() << "adsr cnt " << cnt;
+    for(int idx=0; idx < cnt ; idx++) {
+        settings.pushTag("luz", idx);
+            float quiet = 0.2;
+            float trig = 1.0;
+            float alfa = 0.8;
+            int inv = 0;
+            int umb = 600;
+            int sust = 600;
+            int rel = 100;
+            inv =  settings.getValue("invertir",inv_luz );
+            umb =  settings.getValue("umbral", umb_luz);
+            trig =  settings.getValue("umbral", max_trig);
+            quiet =  settings.getValue("umbral", max_quiet);
+            sust =  settings.getValue("duracion", sust_luz);
+            rel =  settings.getValue("duracion_fin", rel_luz);
+            alfa = settings.getValue("alfa", alfa_luz);
+
+        adsr *a = new adsr();
+
+        a->sustl = sust;
+        a->rell = rel;
+        a->alfa_sus = alfa;
+        a->umbral = umb;
+        a->max_trig = trig;
+        a->max_quiet = quiet;
+
+        if (inv) {
+            a->_slope_sign = 1;
+        } else {
+            a->_slope_sign = -1;
+
+        }
+        adsrs.push_back(a);
+        settings.popTag();
+    }
+
+    cnt = settings.getNumTags("presion");
+    ofLog() << "adsr presion cnt " << cnt;
+    for(int idx=0; idx < cnt ; idx++) {
+        settings.pushTag("presion", idx);
+            int sust = 600;
+            int rel = 100;
+            float alfa = 0.95;
+            sust =  settings.getValue("duracion", sust_pres);
+            rel =  settings.getValue("duracion_fin", rel_pres);
+            alfa = settings.getValue("alfa", alfa_pres);
+
+        adsr *a = new adsr();
+
+        a->sustl = sust;
+        a->rell = rel;
+        a->alfa_sus = alfa;
+        a->max_trig = max_trig;
+        a->max_quiet = max_quiet;
+
+        presion.push_back(a);
+        settings.popTag();
+    }
+
+    cnt = settings.getNumTags("player");
     for(int idx=0; idx < cnt ; idx++) {
         settings.pushTag("player", idx);
         string fn = settings.getValue("file", "");
-        if (fn.size()) {
-            audios.push_back(fn);
+        if (!fn.empty()) {
             printf("file: %s\n", fn.c_str());
 
-            ondaStyle *estilo = new ondaStyle();
+            onda *player = new onda();
 
-            estilo->lineWidth = settings.getValue("linewidth",lw);
-            estilo->color.r = settings.getValue("line_red",lr);
-            estilo->color.g = settings.getValue("line_green",lg);
-            estilo->color.b = settings.getValue("line_blue",lb);
+            if (!adsrs.empty()){
+                if (settings.tagExists("luz")) {
+                    ofLog() << "adsr connect play idx " << idx;
+                    adsr *a = adsrs[ settings.getValue("luz", 0)%adsrs.size() ];
+                    ofAddListener(a->while_triggered, player, &onda::volume_cb); 
+                }
+            }
 
-            onda *player = new onda(topx, topy + dy*idx, w, dy*.9, 128);
+            if (!presion.empty()){
+                if (settings.tagExists("presion")) {
+                    ofLog() << "adsr connect play idx " << idx;
+                    adsr *a = presion[ settings.getValue("presion", 0)%adsrs.size() ];
+                    ofAddListener(a->while_triggered, player, &onda::volume_cb); 
+                }
+            }
 
             player->loadSound(fn);
             reproductores.push_back(player);
-            player->setVolume(settings.getValue("volume", vol));
+            player->setVolume(settings.getValue("volume", max_quiet));
             player->play();
             player->setLoop(true);
             player->setMultiPlay(false);
-            player->style = estilo;
-            player->_debug = false;
-
-            ofSoundPlayer *rayplay = new ofSoundPlayer();
-            rayplay->loadSound(fn);
-            rayplay->setLoop(false);
-            rayplay->setMultiPlay(false);
-            rayplay->setVolume(1.0);
-            reproductores_rayo.push_back(rayplay);
         }
         settings.popTag();
     }
@@ -86,40 +153,61 @@ void testApp::setup(){
 
 
 //--------------------------------------------------------------
-void testApp::update(){
-    for (vector<onda *>::iterator it=reproductores.begin() ; it != reproductores.end() ; it++) {
-        (*it)->update();
+void testApp::setupArduino(const int & version){
+
+    ofRemoveListener(arduino.EInitialized, this, &testApp::setupArduino);
+
+    bSetupArduino   = true;
+
+    for(int idx=0; idx < 6; idx++) {
+        arduino.sendAnalogPinReporting(idx, ARD_ANALOG);
     }
 
-    executePlaylist();
+    for(int idx=2; idx < 8; idx++) {
+        arduino.sendDigitalPinMode(idx, ARD_INPUT);
+    }
+
+}
+
+
+//--------------------------------------------------------------
+void testApp::update(){
+    if (arduino.isArduinoReady()){
+        if( !bSetupArduino ){
+            setupArduino(+0);
+            return;
+        } else {
+            arduino.update();
+        }
+    } else {
+        return;
+    }
+
+    int t = ofGetElapsedTimeMillis();
+    if (t - lt >= 100){
+        lt = t;    
+        for(int idx=0; idx < adsrs.size(); idx++) {
+            int val = arduino.getAnalog(idx%6);
+            if (val == -1){ continue; }
+            val = ofClamp(2*val, 0, 1024);
+            adsrs[idx]->add_sample(val);
+            //ofLog() << "canal " << idx << " val " << arduino.getAnalog(idx);
+        }
+        for(int idx=0; idx < presion.size(); idx++) {
+            int val = arduino.getDigital((idx%6)+2);
+            if (val == -1){ continue; }
+            presion[idx]->add_sample(512*(2-val));
+            //ofLog() << "canal " << idx << " val " << arduino.getAnalog(idx);
+        }
+    }
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
-    for (vector<onda *>::iterator it=reproductores.begin() ; it != reproductores.end() ; it++) {
-        (*it)->draw();
-    }
-    switch (state){
-        case RAY:
-            if ((ofGetElapsedTimef() - tstart) > 2 ){
-                state = RELEASE;
-            }
-        case CLICK:
-            ofPushStyle();
-            ofSetStyle(estilo_rayo);
-            ofLine(start.x, start.y, end.x, end.y);
-            ofPopStyle();
-            break;
-        case RELEASE:
-            break;
-    }
 }
 
 //--------------------------------------------------------------
 void testApp::keyPressed  (int key){
-    for (vector<onda *>::iterator it=reproductores.begin() ; it != reproductores.end() ; it++) {
-        (*it)->play();
-    }
 }
 
 //--------------------------------------------------------------
@@ -134,52 +222,14 @@ void testApp::mouseMoved(int x, int y ){
 
 //--------------------------------------------------------------
 void testApp::mouseDragged(int x, int y, int button){
-    end.set(x,y);
 }
 
 //--------------------------------------------------------------
 void testApp::mousePressed(int x, int y, int button){
-    state = CLICK;
-    start.set(x,y);
-    end.set(x,y);
 }
 
 //--------------------------------------------------------------
 void testApp::mouseReleased(int x, int y, int button){
-    state = RELEASE;
-    if ( (end - start).length() > raymin ){
-        state = RAY;
-        tstart = ofGetElapsedTimef();
-
-        int w = ofGetScreenWidth();
-        int h = ofGetScreenHeight();
-
-        if ( end.x == start.x ){
-            end.y = 0;
-            start.y = h;
-            buildPlaylist();
-            return;
-        }
-
-        float m = (end.y - start.y) / (end.x - start.x);
-        float x0 = start.x;
-        float y0 = start.y;
-        float b = y0 - m*x0;
-
-        float x;
-
-        x = -b / m;
-        x = CLAMP(x,0,w);
-        start.x = x;
-        start.y = m*x + b;
-
-        x = (h-b) / m;
-        x = CLAMP(x,0,w);
-        end.x = x;
-        end.y = m*x + b;
-
-        buildPlaylist();
-    }
 }
 
 //--------------------------------------------------------------
@@ -187,94 +237,3 @@ void testApp::windowResized(int w, int h){
 
 }
 
-//--------------------------------------------------------------
-void testApp::buildPlaylist(){
-    float m = (end.y - start.y) / (end.x - start.x);
-    float x0 = start.x;
-    float y0 = start.y;
-    float b = y0 - m*x0;
-
-    int cnt = reproductores_rayo.size();
-
-    int w = ofGetWidth() * .9;
-    int h = ofGetHeight() * .9;
-    int dy = h / cnt;
-
-    int topx = (ofGetScreenWidth() - w)/2;
-    int topy = (ofGetScreenHeight() - dy*cnt)/2;
-
-    int dir = (end.y > start.y) ? 1 : 0;
-
-    for (int i=0; i < cnt ; i++){
-        int idx = dir ? i : (cnt-1) - i ;
-
-        // donde el rayo corta a la linea media de cada reproductor.
-        int y = topy + idx*dy + 0.5*0.9*dy;
-        float x = (y-b) / m;
-
-        // el rayo no corta a esta linea dentro de la pantalla.
-        if ( (x>w) || (x<topx) ){
-            continue;
-        }
-
-        // Si cruza de en la mitad izquierda toma hasta 30 segundos anteriores.
-        unsigned int dt = 30*1000*(x -w/2)/w; // en ms.
-
-        // XXX: en 0062 solo hay un getPosition en samples y no una forma
-        // facil de obtener la tasa de muestreo del sonido.
-        unsigned int pos;
-        FMOD_Channel_GetPosition(reproductores[idx]->channel, &pos, FMOD_TIMEUNIT_MS);
-
-        unsigned int len;
-        FMOD_Sound_GetLength(reproductores[idx]->sound, &len, FMOD_TIMEUNIT_MS);
-
-
-        PlayItem *item = new PlayItem;
-
-        // Un segundo y medio de duracion por cada segmento.
-        if ( (pos + dt) < (len - 1.5*1000) ){
-            item->start = (pos + dt) / ((float) len);
-            item->end = (pos + dt + 1.5*1000) / ((float) len);
-            if ( item->start < 0 ){
-                item->start = 0;
-                item->end = (pos + 1.5*1000) / ((float) len);
-            }
-
-        }else{
-            item->start = (len - 1.5*1000) / ((float) len);
-            item->end = 0.999;
-        }
-
-        item->player = reproductores_rayo[idx];
-        printf("BUILD idx=%i pos=%i dt=%i len=%i\n", idx, pos,dt,len);
-        printf("BUILD idx=%i start=%.2f end=%.2f\n", idx, item->start, item->end);
-        playlist.push(item);
-    }
-
-}
-
-//--------------------------------------------------------------
-void testApp::executePlaylist(){
-    if( playlist.empty() ){
-        return;
-    }
-
-    PlayItem *item = playlist.front();
-
-    if ( true == item->player->getIsPlaying() ){
-        if( item->player->getPosition() < item->end ){
-            return;
-        }
-
-        item->player->stop();
-        playlist.pop();
-
-        delete item;
-        printf("item delete. size=%i\n", playlist.size());
-    }else{
-        // XXX: setPosition() solo toma efecto si se esta reproduciendo!
-        item->player->play();
-        item->player->setPosition(item->start);
-    }
-
-}

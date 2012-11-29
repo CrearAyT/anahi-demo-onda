@@ -3,7 +3,8 @@
 # OF_ROOT allows to move projects outside apps/* just set this variable to the
 # absoulte path to the OF root folder
 
-OF_ROOT = ../../../
+OF_ROOT = /media/datos/programas/of_v0072_linux_release
+
 
 
 # USER_CFLAGS allows to pass custom flags to the compiler

@@ -28,6 +28,11 @@ onda::onda()
     buffer = new float[_npoints];
 }
 
+void onda::volume_cb(float &vol)
+{
+        ofFmodSoundPlayer::setVolume(vol);
+}
+
 void onda::update()
 {
     if (getIsPlaying()){

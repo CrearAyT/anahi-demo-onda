@@ -4,13 +4,15 @@
 #include "ofMain.h"
 
 
-class onda : public ofSoundPlayer
+class onda : public ofFmodSoundPlayer
 {
     public:
         onda(int topx, int topy, int width, int height, int npoints);
         onda();
         void update();
         void draw();
+
+        void volume_cb(float &vol);
 
         int _topx, _topy, _width, _height;
         int _npoints;

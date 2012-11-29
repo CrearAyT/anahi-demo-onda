@@ -3,18 +3,12 @@
 
 
 #include "ofMain.h"
-#include "ofVec2f.h"
+#include "ofArduino.h"
 #include "onda.h"
+#include "adsr.h"
 
 #include <queue>
 
-enum State { CLICK, RELEASE, RAY };
-
-struct PlayItem {
-    ofSoundPlayer *player;
-    float start;
-    float end;
-};
 
 class testApp : public ofBaseApp{
 
@@ -32,22 +26,16 @@ class testApp : public ofBaseApp{
 		void mouseReleased(int x, int y, int button);
 		void windowResized(int w, int h);
 
-        State state;
-        ofVec2f start, end;
-        float tstart;
-        float raylen;
-        float raymin;
-        ofStyle estilo_rayo;
+        void setupArduino(const int & version);
+        bool        bSetupArduino;          // flag variable for setting up arduino once
 
+        int lt;
         vector<onda *> reproductores;
-        vector<ofSoundPlayer *> reproductores_rayo;
+        vector<adsr *> adsrs;
+        vector<adsr *> presion;
 
-        queue<PlayItem *> playlist;
+        ofArduino arduino;
 
-    private:
-
-        void buildPlaylist();
-        void executePlaylist();
 };
 
 #endif
