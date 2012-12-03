@@ -153,6 +153,7 @@ class ofArduino{
 
                 // --- setup functions
 				bool connect(string device, int baud = 57600);
+				bool connect();
 				// opens a serial port connection to the arduino
 
 				void disconnect();
@@ -162,7 +163,7 @@ class ofArduino{
 
 				void  setUseDelay(bool bDelay);
 
-				void update();
+				bool update();
 				// polls data from the serial port, this has to be called periodically
 
 				bool isInitialized();
@@ -331,6 +332,8 @@ class ofArduino{
 
 				int getServo(int pin);
 				// returns the last set servo value for a pin if the pin has a servo attached
+
+                string port_name;
 
 		protected:
 				bool _initialized;

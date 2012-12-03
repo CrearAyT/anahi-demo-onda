@@ -57,6 +57,7 @@ ofArduino::ofArduino(){
 	_firmwareName = "Unknown";
 
 	bUseDelay = true;
+    port_name = "/dev/ttyUSB0";
 }
 
 ofArduino::~ofArduino() {
@@ -109,12 +110,18 @@ void ofArduino::initPins() {
 }
 
 bool ofArduino::connect(string device, int baud){
+    port_name = device;
 	connectTime = ofGetElapsedTimef();
 	_initialized = false;
 	//_port.enumerateDevices();
 	connected = _port.Open(device.c_str());
 	_port.Set_baud(baud);
 	return connected;
+}
+
+bool ofArduino::connect(){
+    disconnect();
+    return connect(port_name);
 }
 
 // this method is not recommended
@@ -155,21 +162,26 @@ void ofArduino::setStringHistoryLength(int length){
 
 void ofArduino::disconnect(){
 	_port.Close();
+    connected = false;
+    _initialized = false;
 }
 
-void ofArduino::update(){
+bool ofArduino::update(){
 	static unsigned char bytesToProcess[33];
 	int cnt = 0;
 
     //ofLog() << " avail() " << _port.available();
     cnt = _port.Read(bytesToProcess, 32);
     //ofLog() << "read() " << cnt;
-    if( cnt == OF_SERIAL_NO_DATA || cnt == OF_SERIAL_ERROR ) {
-        return;
+    //if( cnt == OF_SERIAL_NO_DATA || cnt == OF_SERIAL_ERROR ) {
+    if( cnt < 0 ) {
+        disconnect();
+        return false;
     }
     for (int i = 0; i < cnt; i++) {
         processData(bytesToProcess[i]);
     }
+    return true;
 }
 
 int ofArduino::getAnalog(int pin){
