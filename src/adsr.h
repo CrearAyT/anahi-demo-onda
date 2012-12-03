@@ -48,6 +48,9 @@ class adsr {
 
         _STATE state;
         int umbral;
+        bool invert;
+        bool presion;
+        bool luz_hold;
         int _slope_sign;
 
         adsr_internal_state info;

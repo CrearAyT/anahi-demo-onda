@@ -31,10 +31,17 @@ class testApp : public ofBaseApp{
 
         int lt;
         vector<onda *> reproductores;
+        vector<onda *> reproductores_bg;
         vector<adsr *> adsrs;
         vector<adsr *> presion;
 
+
+        float bola_on;
+        float bola_off;
+
         ofArduino arduino;
+        void bola_on_cb(int &vol);
+        void bola_off_cb(int &vol);
 
 };
 

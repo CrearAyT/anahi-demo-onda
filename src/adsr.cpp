@@ -52,6 +52,9 @@ adsr::adsr()
     alfa_rel = 0.85;
     alfa_sus = 0.85;
     alfa_att = 0.3;
+    invert = false;
+    presion = false;
+    luz_hold = false;
 
     info.triggered = false;
     info.sample = 0;
@@ -69,6 +72,7 @@ float  adsr::_quiet(int sample)
         samplec = attackl;
         state = ATTACK;
         ofNotifyEvent(on_trigger, sample, this);
+        ofLog() << " s. ATT pres= " << presion;
         return _attack(sample);
     }
     update_internal_state(0, triggered, sample, d);
@@ -96,8 +100,25 @@ float  adsr::_attack(int sample)
 float  adsr::_sustain(int sample)
 {
    if (samplec){
-        lp1._alfa = alfa_sus;
+        if (presion && sample > 768){
+            if (samplec < 5 ){
+                samplec = 5;
+            }
+        }
         int d = dx(sample);
+        sample = 2.5*sample;
+        lp1._alfa = alfa_sus;
+        if (luz_hold){
+            bool ok = !(abs(d)>=umbral);
+            int dslp = -1*d*_slope_sign;
+            if ((dslp >0) and ok){
+                samplec+=1;
+            }
+            if (!ok){
+                samplec = 1;
+            }
+
+        }
         samplec-- ;
         float val = lp1(sample);
         val = val*max_trig / 1024.0f;
@@ -106,6 +127,7 @@ float  adsr::_sustain(int sample)
         return val;
     } else {
         state = RELEASE;
+        ofLog() << " s. REL pres= " << presion;
         samplec = rell;
         return _release(sample);
     }
@@ -117,6 +139,7 @@ float  adsr::_release(int sample)
         lp1._alfa = alfa_rel;
         int d = dx(sample);
         samplec = samplec - 1;
+        sample = 1.5 * sample;
         float val = lp1(sample*(1.*samplec/rell));
         val = val*max_quiet / 1024.0f;
         update_internal_state(val, triggered, sample, d);
@@ -129,6 +152,7 @@ float  adsr::_release(int sample)
         ofNotifyEvent(while_triggered, max_quiet, this);
         ofNotifyEvent(on_release, sample, this);
         update_internal_state(0, triggered, sample, 0);
+        ofLog() << " s. QUI pres= " << presion;
         return 0;
     }
 }
@@ -151,19 +175,24 @@ void adsr::update_internal_state(float val, bool triggered, int sample, int d)
 
 float adsr::add_sample(int sample)
 {
+    int _sample = sample;
+    if (invert) {
+        _sample = 1023 - sample;
+    }
+
     switch (state) {
         case ATTACK:
-            return _attack(sample);
+            return _attack(_sample);
             break;
         case SUSTAIN:
-            return _sustain(sample);
+            return _sustain(_sample);
             break;
         case RELEASE:
-            return _release(sample);
+            return _release(_sample);
             break;
         case QUIET:
         default:
-            return _quiet(sample);
+            return _quiet(_sample);
             break;
     }
 }

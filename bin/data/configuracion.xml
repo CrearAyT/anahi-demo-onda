@@ -1,21 +1,21 @@
 <defaults>
     <port>/dev/ttyUSB0</port>
     <luz>
-        <umbral>100</umbral>
+        <umbral>40</umbral>
         <invertir>1</invertir>
-        <duracion>600</duracion>
-        <duracion_fin>100</duracion_fin>
-        <alfa>0.8</alfa>
+        <duracion>3</duracion>
+        <duracion_fin>1</duracion_fin>
+        <alfa>0.6</alfa>
     </luz>
 
     <presion>
         <invertir>0</invertir>
-        <duracion>300</duracion>
-        <duracion_fin>100</duracion_fin>
-        <alfa>0.975</alfa>
+        <duracion>50</duracion>
+        <duracion_fin>1</duracion_fin>
+        <alfa>0.8</alfa>
     </presion>
 
-    <volumen_normal>0.20</volumen_normal>
+    <volumen_normal>0.0</volumen_normal>
     <volumen_activo>1.0</volumen_activo>
 </defaults>
 
@@ -34,15 +34,48 @@
 <presion> </presion>
 
 
+
 <player>
-    <file>/media/datos/musica/musica_home/Sara Vaughan - Peter Gunn.ogg</file>
+    <file>Bola_mezcla.mp3</file>
+    <volumen>0.081</volumen>
 </player>
 
 <player>
+    <file>2004_mezcla.mp3</file>
+    <presion>0</presion>
+</player>
+
+<player>
+    <file>2005_mezcla.mp3</file>
     <presion>1</presion>
-    <file>/media/datos/musica/musica_home/Amadou &amp; Mariam - Dimanche à Bamako - 10 - La Paix.ogg</file>
 </player>
 
 <player>
-    <file>/media/datos/musica/musica_home/Fever (Peggy Lee).ogg</file>
+    <file>2006_mezcla.mp3</file>
+    <presion>2</presion>
+</player>
+
+<player>
+    <file>2007_mezcla.mp3</file>
+    <presion>3</presion>
+</player>
+
+<player>
+    <file>2008_mezcla.mp3</file>
+    <luz>0</luz>
+</player>
+
+<player>
+    <file>2009_mezcla.mp3</file>
+    <luz>1</luz>
+</player>
+
+<player>
+    <file>2010_mezcla.mp3</file>
+    <luz>2</luz>
+</player>
+
+<player>
+    <file>2011_mezcla.mp3</file>
+    <luz>3</luz>
 </player>

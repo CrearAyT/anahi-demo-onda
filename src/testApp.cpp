@@ -32,13 +32,14 @@ void testApp::setup(){
 
     settings.pushTag("defaults");
         port = settings.getValue("port", "/dev/ttyUSB0");
-        max_trig =  settings.getValue("volumen_activo", 1.0);
-        max_quiet =  settings.getValue("volumen_normal", 0.2);
+        bola_on = max_trig =  settings.getValue("volumen_activo", 1.0);
+        bola_off = max_quiet =  settings.getValue("volumen_normal", 0.2);
         settings.pushTag("luz");
             inv_luz =  settings.getValue("invertir", 0);
             umb_luz =  settings.getValue("umbral", 100);
             sust_luz =  settings.getValue("duracion", 600);
             umb_luz =  settings.getValue("umbral", 100);
+            rel_luz =  settings.getValue("duracion_fin", 100);
             alfa_luz =  settings.getValue("alfa", 0.8);
         settings.popTag();
         settings.pushTag("presion");
@@ -74,6 +75,7 @@ void testApp::setup(){
 
         adsr *a = new adsr();
 
+        a->luz_hold = true;
         a->sustl = sust;
         a->rell = rel;
         a->alfa_sus = alfa;
@@ -81,10 +83,12 @@ void testApp::setup(){
         a->max_trig = trig;
         a->max_quiet = quiet;
 
+        a->_slope_sign = 1;
+
         if (inv) {
-            a->_slope_sign = 1;
+            //a->umbral = -1*umb;
+            a->invert = true;
         } else {
-            a->_slope_sign = -1;
 
         }
         adsrs.push_back(a);
@@ -106,6 +110,7 @@ void testApp::setup(){
 
         a->sustl = sust;
         a->rell = rel;
+        a->presion = true;
         a->alfa_sus = alfa;
         a->max_trig = max_trig;
         a->max_quiet = max_quiet;
@@ -116,6 +121,7 @@ void testApp::setup(){
 
     cnt = settings.getNumTags("player");
     for(int idx=0; idx < cnt ; idx++) {
+        bool has_sens = false;
         settings.pushTag("player", idx);
         string fn = settings.getValue("file", "");
         if (!fn.empty()) {
@@ -128,6 +134,9 @@ void testApp::setup(){
                     ofLog() << "adsr connect play idx " << idx;
                     adsr *a = adsrs[ settings.getValue("luz", 0)%adsrs.size() ];
                     ofAddListener(a->while_triggered, player, &onda::volume_cb); 
+                    ofAddListener(a->on_trigger, this, &testApp::bola_off_cb);
+                    ofAddListener(a->on_release, this, &testApp::bola_on_cb);
+                    has_sens = true;
                 }
             }
 
@@ -136,21 +145,42 @@ void testApp::setup(){
                     ofLog() << "adsr connect play idx " << idx;
                     adsr *a = presion[ settings.getValue("presion", 0)%adsrs.size() ];
                     ofAddListener(a->while_triggered, player, &onda::volume_cb); 
+                    ofAddListener(a->on_trigger, this, &testApp::bola_off_cb);
+                    ofAddListener(a->on_release, this, &testApp::bola_on_cb);
+                    has_sens = true;
                 }
             }
 
             player->loadSound(fn);
-            reproductores.push_back(player);
-            player->setVolume(settings.getValue("volume", max_quiet));
+            player->setVolume(settings.getValue("volumen", max_quiet));
+            player->setMultiPlay(false);
+
             player->play();
             player->setLoop(true);
-            player->setMultiPlay(false);
+
+            if (has_sens) {
+                reproductores.push_back(player);
+            } else {
+                reproductores_bg.push_back(player);
+            }
         }
         settings.popTag();
     }
 
 }
 
+void testApp::bola_off_cb(int &vol){
+    for (vector<onda *>::iterator it=reproductores.begin() ; it != reproductores.end() ; it++) {
+        (*it)->setVolume(bola_off);
+    }
+
+}
+void testApp::bola_on_cb(int &vol){
+    for (vector<onda *>::iterator it=reproductores.begin() ; it != reproductores.end() ; it++) {
+        (*it)->setVolume(bola_on);
+    }
+
+}
 
 //--------------------------------------------------------------
 void testApp::setupArduino(const int & version){
@@ -196,7 +226,9 @@ void testApp::update(){
         for(int idx=0; idx < presion.size(); idx++) {
             int val = arduino.getDigital((idx%6)+2);
             if (val == -1){ continue; }
-            presion[idx]->add_sample(512*(2-val));
+            int smp = 512*(2-val);
+            //ofLog() <<"pres idx = " << idx << "val = " << smp;
+            presion[idx]->add_sample(smp);
             //ofLog() << "canal " << idx << " val " << arduino.getAnalog(idx);
         }
     }

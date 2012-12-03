@@ -30,7 +30,7 @@ onda::onda()
 
 void onda::volume_cb(float &vol)
 {
-        ofFmodSoundPlayer::setVolume(vol);
+        ofFmodSoundPlayer::setVolume(ofClamp(vol, 0, 1.0f));
 }
 
 void onda::update()
