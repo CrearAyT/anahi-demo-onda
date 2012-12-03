@@ -187,15 +187,21 @@ void testApp::setupArduino(const int & version){
 
     ofRemoveListener(arduino.EInitialized, this, &testApp::setupArduino);
 
+    ofLog() << "setupArduino()";
+
     bSetupArduino   = true;
 
     for(int idx=0; idx < 6; idx++) {
+        ofLog() << "sendAnalog " << idx;
         arduino.sendAnalogPinReporting(idx, ARD_ANALOG);
     }
 
     for(int idx=2; idx < 8; idx++) {
+        ofLog() << "sendDigital " << idx;
         arduino.sendDigitalPinMode(idx, ARD_INPUT);
     }
+
+    ofLog() << "setupArduino() OK";
 
 }
 
@@ -207,9 +213,20 @@ void testApp::update(){
             setupArduino(+0);
             return;
         } else {
-            arduino.update();
+            if( arduino.update() ){
+                //ofLog() << "update()";
+
+            } else {
+                ofLog() << "error en update()";
+                bSetupArduino = false;
+                if (arduino.connect()){
+                    setupArduino(+0);
+                }
+                return;
+            }
         }
     } else {
+        ofLog() << "not ready";
         return;
     }
 
@@ -218,6 +235,7 @@ void testApp::update(){
         lt = t;    
         for(int idx=0; idx < adsrs.size(); idx++) {
             int val = arduino.getAnalog(idx%6);
+            //ofLog() << "canal " << idx << " val " << val;
             if (val == -1){ continue; }
             val = ofClamp(2*val, 0, 1024);
             adsrs[idx]->add_sample(val);
